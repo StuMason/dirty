@@ -1,0 +1,4 @@
+{
+    "exitCode": 0,
+    "output": "Running post deploy commands for the first time...\n\n   ERROR  Encrypted environment file not found.  \n\nFailed to decrypt the env file...\nrename(\/var\/task\/.env.serverless,\/mnt\/store\/.env): Operation not permitted\nChecking database...\nDatabase already exists.\nMigrating database...\n\n   INFO  Preparing database.  \n\n  Creating migration table ...................................... 86.96ms DONE\n\n   INFO  Running migrations.  \n\n  0001_01_01_000000_create_users_table ......................... 612.67ms DONE\n  0001_01_01_000001_create_cache_table ......................... 223.28ms DONE\n  0001_01_01_000002_create_jobs_table .......................... 519.24ms DONE\n\nDatabase created successfully.\n"
+}
