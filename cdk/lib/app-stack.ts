@@ -17,7 +17,6 @@ import {
     aws_efs,
 } from "aws-cdk-lib";
 
-
 export class AppStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
@@ -44,20 +43,27 @@ export class AppStack extends Stack {
             blockPublicAccess: aws_s3.BlockPublicAccess.BLOCK_ALL,
         });
 
-        const fileSystem = new aws_efs.FileSystem(this, "ServerlessFileSystem", {vpc: vpc});
+        const fileSystem = new aws_efs.FileSystem(
+            this,
+            "ServerlessFileSystem",
+            { vpc: vpc }
+        );
 
-        const accessPoint = fileSystem.addAccessPoint("ServerlessEfsAccessPoint", {
-            createAcl: {
-                ownerGid: "1001",
-                ownerUid: "1001",
-                permissions: "750",
-            },
-            path: "/export/lambda",
-            posixUser: {
-                gid: "1001",
-                uid: "1001",
-            },
-        });
+        const accessPoint = fileSystem.addAccessPoint(
+            "ServerlessEfsAccessPoint",
+            {
+                createAcl: {
+                    ownerGid: "1001",
+                    ownerUid: "1001",
+                    permissions: "750",
+                },
+                path: "/export/lambda",
+                posixUser: {
+                    gid: "1001",
+                    uid: "1001",
+                },
+            }
+        );
 
         const lambdaSecGroup = new aws_ec2.SecurityGroup(
             this,
@@ -82,7 +88,10 @@ export class AppStack extends Stack {
                 }),
                 memorySize: 1024,
                 timeout: Duration.seconds(20),
-                filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(accessPoint, '/mnt/store'),
+                filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
+                    accessPoint,
+                    "/mnt/store"
+                ),
             }
         );
 
@@ -100,7 +109,10 @@ export class AppStack extends Stack {
                 }),
                 memorySize: 1024,
                 timeout: Duration.seconds(20),
-                filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(accessPoint, '/mnt/store'),
+                filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
+                    accessPoint,
+                    "/mnt/store"
+                ),
             }
         );
 
@@ -122,7 +134,10 @@ export class AppStack extends Stack {
                 code: aws_lambda.DockerImageCode.fromImageAsset("../"),
                 memorySize: 1024,
                 timeout: Duration.seconds(20),
-                filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(accessPoint, '/mnt/store'),
+                filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
+                    accessPoint,
+                    "/mnt/store"
+                ),
             }
         );
 
@@ -217,57 +232,8 @@ export class AppStack extends Stack {
             exclude: ["*.php"],
         });
 
-        laravelArtisan.addEnvironment("QUEUE_CONNECTION", "sqs");
-        laravelArtisan.addEnvironment(
-            "SQS_PREFIX",
-            `https://sqs.${this.region}.amazonaws.com/${this.account}`
-        );
-        laravelArtisan.addEnvironment("SQS_QUEUE", queue.queueName);
-
-        laravelWeb.addEnvironment("QUEUE_CONNECTION", "sqs");
-        laravelWeb.addEnvironment(
-            "SQS_PREFIX",
-            `https://sqs.${this.region}.amazonaws.com/${this.account}`
-        );
-        laravelWeb.addEnvironment("SQS_QUEUE", queue.queueName);
-
-        laravelWorker.addEnvironment("QUEUE_CONNECTION", "sqs");
-        laravelWorker.addEnvironment(
-            "SQS_PREFIX",
-            `https://sqs.${this.region}.amazonaws.com/${this.account}`
-        );
-        laravelWorker.addEnvironment("SQS_QUEUE", queue.queueName);
-
-        laravelWeb.addEnvironment("ASSET_URL", `https://${distro.domainName}`);
-        laravelWeb.addEnvironment("AWS_BUCKET", bucket.bucketName);
-        laravelWeb.addEnvironment("FILESYSTEM_DISK", "s3");
-        laravelWeb.addEnvironment("APP_CF_URL", `https://${distro.domainName}`);
-        laravelWeb.addEnvironment("LOG_CHANNEL", "stderr");
-
-        laravelArtisan.addEnvironment(
-            "ASSET_URL",
-            `https://${distro.domainName}`
-        );
-        laravelArtisan.addEnvironment("AWS_BUCKET", bucket.bucketName);
-        laravelArtisan.addEnvironment("FILESYSTEM_DISK", "s3");
-        laravelArtisan.addEnvironment(
-            "APP_CF_URL",
-            `https://${distro.domainName}`
-        );
-        laravelArtisan.addEnvironment("LOG_CHANNEL", "stderr");
-
-        laravelWorker.addEnvironment(
-            "ASSET_URL",
-            `https://${distro.domainName}`
-        );
-        laravelWorker.addEnvironment("AWS_BUCKET", bucket.bucketName);
-        laravelWorker.addEnvironment("FILESYSTEM_DISK", "s3");
-        laravelWorker.addEnvironment(
-            "APP_CF_URL",
-            `https://${distro.domainName}`
-        );
-        laravelWorker.addEnvironment("LOG_CHANNEL", "stderr");
-
         new CfnOutput(this, "DistributionURL", { value: distro.domainName });
+        new CfnOutput(this, "BucketName", { value: bucket.bucketName });
+        new CfnOutput(this, "QueueName", { value: queue.queueName });
     }
 }
