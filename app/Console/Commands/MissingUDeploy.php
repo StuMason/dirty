@@ -19,7 +19,7 @@ class MissingUDeploy extends Command
      * @var string
      */
     protected $description = 'Run the post deploy commands.
-                                {key : The key to decrypt the env file}';
+                              {key : The key to decrypt the env file}';
 
     /**
      * Execute the console command.
