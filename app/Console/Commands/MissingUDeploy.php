@@ -34,39 +34,37 @@ class MissinguDeploy extends Command
          * We then hit missing:u for a signedURL to upload the zip
          * We then upload the zip to the signedURL
          */
-        $this->authenticate()
-            ->zipCodebase()
-            ->getSignedUrl()
-            ->uploadZip();
+        $this->authenticate();
+        $this->zipCodebase();
+        $this->getSignedUrl();
+        $this->uploadZip();
     }
 
     private function authenticate()
     {
         $this->info('Authenticating with missing:u...');
-        // Authenticate with missing:u
-        return $this;
     }
 
     private function zipCodebase()
     {
         $this->info('Creating the missing:u artifact...');
         // Zip up the codebase
+        $dirty = Process::run('git status --porcelain');
+        if ($dirty) {
+            $this->error('You have uncommitted changes. Please commit or stash them before deploying.');
+            return;
+        }
         $command = "git archive -o missingu_artifact.zip -9 HEAD";
         $this->process = Process::timeout(240)->run($command);
-        return $this;
     }
 
     private function getSignedUrl()
     {
         $this->info('Getting signed URL from missing:u...');
-        // Get signed URL from missing:u
-        return $this;
     }
 
     private function uploadZip()
     {
         $this->info('Uploading zip to missing:u...');
-        // Upload zip to missing:u
-        return $this;
     }
 }
