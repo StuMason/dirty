@@ -1,10 +1,8 @@
 {
-  "ServerlessLaravel": {
-    "BucketName": "serverlesslaravel-storagebucket19db2ff8-mljsfqjzcun0",
-    "LaravelArtisanFunctionName": "ServerlessLaravel-LaravelArtisan1CAD8727-Z9lrc6Q9dNhG",
-    "LaravelWorkerFunctionName": "ServerlessLaravel-LaravelWorker005DD181-S4SKp97V4KzD",
-    "DistributionURL": "d26umm985qbj8y.cloudfront.net",
-    "QueueName": "ServerlessLaravel-DefaultSqs4A8502A0-jeUwCyUuzFSr",
-    "LaravelWebFunctionName": "ServerlessLaravel-LaravelWeb2B607CD8-cUV6lnbamqGN"
-  }
+ServerlessLaravel.BucketName = serverless-laravel-dev-storagebucket19db2ff8-s3rvazgssdag
+ServerlessLaravel.DistributionURL = d29vrd1yzvnhd9.cloudfront.net
+ServerlessLaravel.LaravelArtisanFunctionName = serverless-laravel-dev-LaravelArtisan1CAD8727-OJ07HKhzIRSm
+ServerlessLaravel.LaravelWebFunctionName = serverless-laravel-dev-LaravelWeb2B607CD8-ikhPvqROW6gB
+ServerlessLaravel.LaravelWorkerFunctionName = serverless-laravel-dev-LaravelWorker005DD181-rqK08asRr3PW
+ServerlessLaravel.QueueName = serverless-laravel-dev-DefaultSqs4A8502A0-GCWHBjrOc6KT
 }

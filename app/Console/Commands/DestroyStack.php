@@ -12,14 +12,16 @@ class DestroyStack extends Command
      *
      * @var string
      */
-    protected $signature = 'missingu:destroy';
+    protected $signature = 'missingu:destroy {appName} {appEnv}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'run CDK commands';
+    protected $description = 'destroy stack
+                             {appName : The name of the app}
+                             {appEnv : The environment of the app}';
 
     /**
      * Execute the console command.
@@ -27,20 +29,14 @@ class DestroyStack extends Command
     public function handle()
     {
         $this->info('Destroying stack...');
-        // PROBABLY SHOULD GET A COPY OF THE DB HERE SOMEHOW?
         $profile = 'speakcloud';
-        $stackName = 'ServerlessLaravel';
-        $stackCommand = "cdk destroy --profile $profile --force --context stackName=$stackName";
-        $this->count = 0;
+        $stackCommand = "cdk destroy --profile $profile --force --context appName=$appName --context appEnv=$appEnv";
         Process::forever()
             ->idleTimeout(120)
             ->path('./cdk')
             ->run($stackCommand, function ($type, $output) {
                 $this->info($output);
-                $this->count++;
-                $this->error('Count: ' . $this->count);
             });
         $this->info('Stack Destroyed successfully.');
-        $outputs = json_decode(file_get_contents($outputsFile), true);
     }
 }

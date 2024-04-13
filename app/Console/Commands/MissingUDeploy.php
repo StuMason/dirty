@@ -3,68 +3,70 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Process;
 
-class MissingUDeploy extends Command
+class MissinguDeploy extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'missingu:deploy {key}';
+    protected $signature = 'missing:u:deploy {appName} {appEnv}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Run the post deploy commands.
-                              {key : The key to decrypt the env file}';
+    protected $description = 'Deploy your stack to missing:u';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        if (!file_exists('/mnt/store/deployed')) {
-            $this->info('Running post deploy commands for the first time...');
-        } else {
-            $this->info('Running post deploy commands...');
-        }
-        $this->key = $this->argument('key');
-        $this->decryptEnv();
-        $this->databaseSetup();
-
+        /**
+         * Zip up the codebase and send it to missing:u
+         * 
+         * User needs to login first if they haven't already
+         * we create the zip file of the codebase
+         * We then hit missing:u for a signedURL to upload the zip
+         * We then upload the zip to the signedURL
+         */
+        $this->authenticate()
+            ->zipCodebase()
+            ->getSignedUrl()
+            ->uploadZip();
     }
 
-    private function databaseSetup()
+    private function authenticate()
     {
-        try {
-            $this->info('Checking database...');
-            if (file_exists('/mnt/store/database.sqlite')) {
-                $this->info('Database already exists.');
-            } else {
-                file_put_contents('/mnt/store/database.sqlite', '');
-            }
-            $this->info('Migrating database...');
-            $this->call('migrate', ['--force' => true]);
-            $this->info('Database created successfully.');
-        } catch (\Exception $e) {
-            $this->error($e->getMessage());
-            return;
-        }
+        $this->info('Authenticating with missing:u...');
+        // Authenticate with missing:u
+        return $this;
     }
 
-    private function decryptEnv()
+    private function zipCodebase()
     {
-        try {
-            $this->call('env:decrypt', ['--key' => $this->key, '--env' => 'serverless', '--force' => true]);
-            rename('/var/task/.env.serverless', '/mnt/store/.env');
-            $this->info('Env file decrypted successfully.');
-        } catch (\Exception $e) {
-            $this->error('Failed to decrypt the env file...');
-            $this->error($e->getMessage());
-            return;
-        }
+        $this->info('Creating the missing:u artifact...');
+        // Zip up the codebase
+        $command = "git archive -o missingu_artifact.zip -9 HEAD";
+        $this->process = Process::timeout(240)->run($command);
+        return $this;
+    }
+
+    private function getSignedUrl()
+    {
+        $this->info('Getting signed URL from missing:u...');
+        // Get signed URL from missing:u
+        return $this;
+    }
+
+    private function uploadZip()
+    {
+        $this->info('Uploading zip to missing:u...');
+        // Upload zip to missing:u
+        return $this;
     }
 }

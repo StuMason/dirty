@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
+use App\Models\Stack;
 
 class CreateStack extends Command
 {
@@ -12,40 +13,47 @@ class CreateStack extends Command
      *
      * @var string
      */
-    protected $signature = 'missingu:create';
+    protected $signature = 'missingu:create {appName} {appEnv} {--vpcId=vpc-05ce71fe4605909aa}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'run CDK commands';
+    protected $description = 'create stack
+                             {appName : The name of the app}
+                             {appEnv : The environment of the app}
+                             {--vpcId : The VPC ID of the app (defaults vpc-05ce71fe4605909aa)}';
 
+    private $command;
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Deploying stack...');
         $outputsFile = storage_path('app/stack_outputs.json');
-        $profile = 'speakcloud';
-        $stackCommand = <<<DEPLOY
-        cdk deploy --profile $profile \
-        --require-approval never --outputs-file $outputsFile \
-        --context stackName=ServerlessLaravel \
-        --parameters appName=serverless-laravel \
-        --parameters appEnv=dev
-DEPLOY;
-        $this->count = 0;
+        $this->buildCommand(
+            'speakcloud', 
+            $this->argument('appName'), 
+            $this->argument('appEnv'), 
+            $this->option('vpcId'),
+            $outputsFile
+        );
+
+        $this->info('Creating stacks...');
+        $this->info($this->command);
+
+        $cdkDirectory = base_path('cdk');
+
         Process::forever()
-            ->idleTimeout(120)
-            ->path('./cdk')
-            ->run($stackCommand, function ($type, $output) {
+            ->idleTimeout(600)
+            ->path($cdkDirectory)
+            ->run($this->command, function ($type, $output) {
                 $this->info($output);
-                $this->count++;
-                $this->error('Count: ' . $this->count);
             });
+
         $this->info('Stack deployed successfully. Getting outputs...');
+
         $outputs = json_decode(file_get_contents($outputsFile), true);
         $this->table(
             ['Type', 'Resource Name'],
@@ -56,5 +64,29 @@ DEPLOY;
                 ];
             })
         );
+
+        $this->info('Stack outputs retrieved successfully.');
+
+        Stack::create([
+            'user_id' => 1,
+            'name' => $this->argument('appName'),
+            'env' => $this->argument('appEnv'),
+            'env_key' => $outputs['ServerlessLaravel']['envKey'],
+            'bucket' => $outputs['ServerlessLaravel']['bucket'],
+            'region' => $outputs['ServerlessLaravel']['region'],
+            'account' => $outputs['ServerlessLaravel']['account']
+        ]);
+    }
+
+    private function buildCommand($profile, $appName, $appEnv, $vpcId, $outputsFile)
+    {
+        $this->command = <<<DEPLOY
+cdk deploy --profile $profile \
+--require-approval never \
+--outputs-file $outputsFile \
+--context appName=$appName \
+--context appEnv=$appEnv \
+--context vpcId=$vpcId
+DEPLOY;
     }
 }

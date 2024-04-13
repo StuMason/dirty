@@ -21,22 +21,16 @@ export class AppStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
 
-        const appName = new CfnParameter(this, "appName", {
-            type: "String",
-            description: "Name of the stack",
-        });
-
-        const appEnv = new CfnParameter(this, "appEnv", {
-            type: "String",
-            description: "Environment of the stack",
-        });
-
+        const vpcId = this.node.tryGetContext('vpcId');
+        const appName = this.node.tryGetContext('appName');
+        const appEnv = this.node.tryGetContext('appEnv');
+        
         const efsIdExport = Fn.importValue("missinguEFSID");
         const efsSecurityGroupExport = Fn.importValue("missinguEFSSG");
 
         // const vpcExport = Fn.importValue("missinguVPC");
         const vpc = aws_ec2.Vpc.fromLookup(this, "Vpc", {
-            vpcId: "vpc-05ce71fe4605909aa",
+            vpcId: vpcId,
         });
 
         const fileSystem = aws_efs.FileSystem.fromFileSystemAttributes(
@@ -63,9 +57,8 @@ export class AppStack extends Stack {
                 ownerUid: "1000",
                 permissions: "755",
             },
+            path: `/stacks/lambda/${appName}/${appEnv}`
         });
-
-        const accessPointPath = `mnt/store/${appName.valueAsString}/${appEnv.valueAsString}`
 
         const lambdaSecGroup = new aws_ec2.SecurityGroup(
             this,
@@ -89,10 +82,10 @@ export class AppStack extends Stack {
                     file: "Dockerfile-artisan",
                 }),
                 memorySize: 1024,
-                timeout: Duration.seconds(20),
+                timeout: Duration.seconds(900),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
                     accessPoint,
-                    accessPointPath
+                    "/mnt/store"
                 ),
             }
         );
@@ -110,15 +103,18 @@ export class AppStack extends Stack {
                     file: "Dockerfile-worker",
                 }),
                 memorySize: 1024,
-                timeout: Duration.seconds(20),
+                timeout: Duration.seconds(900),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
                     accessPoint,
-                    accessPointPath
+                    "/mnt/store"
                 ),
             }
         );
 
-        const queue = new aws_sqs.Queue(this, "DefaultSqs");
+        const queue = new aws_sqs.Queue(this, "DefaultSqs", {
+            visibilityTimeout: Duration.seconds(900),
+        });
+
         const eventSource = new aws_lambda_event_sources.SqsEventSource(queue);
         laravelWorker.addEventSource(eventSource);
 
@@ -133,10 +129,10 @@ export class AppStack extends Stack {
                 securityGroups: [lambdaSecGroup],
                 code: aws_lambda.DockerImageCode.fromImageAsset("../"),
                 memorySize: 1024,
-                timeout: Duration.seconds(20),
+                timeout: Duration.seconds(180),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
                     accessPoint,
-                    accessPointPath
+                    "/mnt/store"
                 ),
             }
         );
@@ -144,15 +140,25 @@ export class AppStack extends Stack {
         const lambdaUrl = laravelWeb.addFunctionUrl({
             authType: aws_lambda.FunctionUrlAuthType.NONE,
             cors: {
-                allowedOrigins: ['*'],
-                allowedHeaders: ['*'],
+                allowedOrigins: ["*"],
+                allowedHeaders: ["*"],
                 allowCredentials: true,
-            }
+            },
         });
 
         queue.grantSendMessages(laravelWeb);
         queue.grantSendMessages(laravelArtisan);
         queue.grantSendMessages(laravelWorker);
+
+        laravelArtisan.addEnvironment("APP_NAME", appName);
+        laravelArtisan.addEnvironment("APP_ENV", appEnv);
+        laravelWorker.addEnvironment("APP_NAME", appName);
+        laravelWorker.addEnvironment("APP_ENV", appEnv);
+        laravelWeb.addEnvironment("APP_NAME", appName);
+        laravelWeb.addEnvironment("APP_ENV", appEnv);
+
+
+
 
         const bucket = new aws_s3.Bucket(this, "StorageBucket", {
             blockPublicAccess: aws_s3.BlockPublicAccess.BLOCK_ALL,
@@ -200,7 +206,9 @@ export class AppStack extends Stack {
             "CloudfrontDistro",
             {
                 defaultBehavior: {
-                    origin: new aws_cloudfront_origins.HttpOrigin(Fn.select(2, Fn.split('/', lambdaUrl.url))),
+                    origin: new aws_cloudfront_origins.HttpOrigin(
+                        Fn.select(2, Fn.split("/", lambdaUrl.url))
+                    ),
                     allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_ALL,
                     viewerProtocolPolicy:
                         aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
