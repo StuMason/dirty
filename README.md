@@ -20,7 +20,10 @@ Then on deploy it would:
 
 Quick, dirty, easy, cheap.
 
+## TODO
 
+- Move VPC and EFS to SharedResources
+- EFS to reference app_name/app_env and share it
 
 ## CDK
 

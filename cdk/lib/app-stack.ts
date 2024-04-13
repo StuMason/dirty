@@ -1,11 +1,11 @@
-import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
-import { HttpApi } from "@aws-cdk/aws-apigatewayv2-alpha";
 import { Construct } from "constructs";
 import {
     Duration,
     Stack,
     StackProps,
     CfnOutput,
+    CfnParameter,
+    Fn,
     aws_lambda,
     aws_s3,
     aws_s3_deployment,
@@ -21,49 +21,51 @@ export class AppStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
 
-        const vpc = new aws_ec2.Vpc(this, "ServerlessVPC", {
-            maxAzs: 1,
-            subnetConfiguration: [
-                {
-                    cidrMask: 24,
-                    name: "Public",
-                    subnetType: aws_ec2.SubnetType.PUBLIC,
-                },
-                {
-                    cidrMask: 24,
-                    name: "Private",
-                    subnetType: aws_ec2.SubnetType.PRIVATE_ISOLATED,
-                },
-            ],
-            ipAddresses: aws_ec2.IpAddresses.cidr("10.0.0.0/16"),
-            natGateways: 0,
+        const appName = new CfnParameter(this, "appName", {
+            type: "String",
+            description: "Name of the stack",
         });
 
-        const bucket = new aws_s3.Bucket(this, "StorageBucket", {
-            blockPublicAccess: aws_s3.BlockPublicAccess.BLOCK_ALL,
+        const appEnv = new CfnParameter(this, "appEnv", {
+            type: "String",
+            description: "Environment of the stack",
         });
 
-        const fileSystem = new aws_efs.FileSystem(
+        const efsIdExport = Fn.importValue("missinguEFSID");
+        const efsSecurityGroupExport = Fn.importValue("missinguEFSSG");
+
+        // const vpcExport = Fn.importValue("missinguVPC");
+        const vpc = aws_ec2.Vpc.fromLookup(this, "Vpc", {
+            vpcId: "vpc-05ce71fe4605909aa",
+        });
+
+        const fileSystem = aws_efs.FileSystem.fromFileSystemAttributes(
             this,
-            "ServerlessFileSystem",
-            { vpc: vpc }
-        );
-
-        const accessPoint = fileSystem.addAccessPoint(
-            "ServerlessEfsAccessPoint",
+            "ServerlessEfs",
             {
-                createAcl: {
-                    ownerGid: "1001",
-                    ownerUid: "1001",
-                    permissions: "750",
-                },
-                path: "/export/lambda",
-                posixUser: {
-                    gid: "1001",
-                    uid: "1001",
-                },
+                fileSystemId: efsIdExport,
+                securityGroup: aws_ec2.SecurityGroup.fromSecurityGroupId(
+                    this,
+                    "EfsSecurityGroup",
+                    efsSecurityGroupExport
+                ),
             }
         );
+
+        const accessPoint = new aws_efs.AccessPoint(this, "AccessPoint", {
+            fileSystem: fileSystem,
+            posixUser: {
+                gid: "1000",
+                uid: "1000",
+            },
+            createAcl: {
+                ownerGid: "1000",
+                ownerUid: "1000",
+                permissions: "755",
+            },
+        });
+
+        const accessPointPath = `mnt/store/${appName.valueAsString}/${appEnv.valueAsString}`
 
         const lambdaSecGroup = new aws_ec2.SecurityGroup(
             this,
@@ -90,7 +92,7 @@ export class AppStack extends Stack {
                 timeout: Duration.seconds(20),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
                     accessPoint,
-                    "/mnt/store"
+                    accessPointPath
                 ),
             }
         );
@@ -111,15 +113,13 @@ export class AppStack extends Stack {
                 timeout: Duration.seconds(20),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
                     accessPoint,
-                    "/mnt/store"
+                    accessPointPath
                 ),
             }
         );
 
         const queue = new aws_sqs.Queue(this, "DefaultSqs");
-
         const eventSource = new aws_lambda_event_sources.SqsEventSource(queue);
-
         laravelWorker.addEventSource(eventSource);
 
         const laravelWeb = new aws_lambda.DockerImageFunction(
@@ -136,31 +136,31 @@ export class AppStack extends Stack {
                 timeout: Duration.seconds(20),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
                     accessPoint,
-                    "/mnt/store"
+                    accessPointPath
                 ),
             }
         );
+
+        const lambdaUrl = laravelWeb.addFunctionUrl({
+            authType: aws_lambda.FunctionUrlAuthType.NONE,
+            cors: {
+                allowedOrigins: ['*'],
+                allowedHeaders: ['*'],
+                allowCredentials: true,
+            }
+        });
 
         queue.grantSendMessages(laravelWeb);
         queue.grantSendMessages(laravelArtisan);
         queue.grantSendMessages(laravelWorker);
 
-        bucket.grantReadWrite(laravelWeb);
-
-        const webIntegration = new HttpLambdaIntegration(
-            "LaravelWebIntegration",
-            laravelWeb
-        );
-
-        const endpoint = new HttpApi(this, "ApiGateway", {
-            defaultIntegration: webIntegration,
+        const bucket = new aws_s3.Bucket(this, "StorageBucket", {
+            blockPublicAccess: aws_s3.BlockPublicAccess.BLOCK_ALL,
         });
 
-        const endpointUrl =
-            endpoint.url?.replace(/(^\w+:|^)\/\//, "").slice(0, -1) ??
-            "No URL available";
-
-        new CfnOutput(this, "EndpointURL", { value: endpointUrl });
+        bucket.grantReadWrite(laravelWeb);
+        bucket.grantReadWrite(laravelArtisan);
+        bucket.grantReadWrite(laravelWorker);
 
         const oai = new aws_cloudfront.OriginAccessIdentity(
             this,
@@ -200,7 +200,7 @@ export class AppStack extends Stack {
             "CloudfrontDistro",
             {
                 defaultBehavior: {
-                    origin: new aws_cloudfront_origins.HttpOrigin(endpointUrl),
+                    origin: new aws_cloudfront_origins.HttpOrigin(Fn.select(2, Fn.split('/', lambdaUrl.url))),
                     allowedMethods: aws_cloudfront.AllowedMethods.ALLOW_ALL,
                     viewerProtocolPolicy:
                         aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -235,5 +235,18 @@ export class AppStack extends Stack {
         new CfnOutput(this, "DistributionURL", { value: distro.domainName });
         new CfnOutput(this, "BucketName", { value: bucket.bucketName });
         new CfnOutput(this, "QueueName", { value: queue.queueName });
+
+        // Function names
+        new CfnOutput(this, "LaravelWebFunctionName", {
+            value: laravelWeb.functionName,
+        });
+
+        new CfnOutput(this, "LaravelArtisanFunctionName", {
+            value: laravelArtisan.functionName,
+        });
+
+        new CfnOutput(this, "LaravelWorkerFunctionName", {
+            value: laravelWorker.functionName,
+        });
     }
 }

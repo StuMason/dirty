@@ -3,5 +3,37 @@
     "eu-west-2a",
     "eu-west-2b",
     "eu-west-2c"
-  ]
+  ],
+  "vpc-provider:account=328601198472:filter.vpc-id=vpc-05ce71fe4605909aa:region=eu-west-2:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-05ce71fe4605909aa",
+    "vpcCidrBlock": "10.0.0.0/16",
+    "ownerAccountId": "328601198472",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Private",
+        "type": "Isolated",
+        "subnets": [
+          {
+            "subnetId": "subnet-062d7fecb1aa0eef2",
+            "cidr": "10.0.1.0/24",
+            "availabilityZone": "eu-west-2a",
+            "routeTableId": "rtb-0da87b92aaf6dabbb"
+          }
+        ]
+      },
+      {
+        "name": "Public",
+        "type": "Public",
+        "subnets": [
+          {
+            "subnetId": "subnet-05fa50dd220d5c81f",
+            "cidr": "10.0.0.0/24",
+            "availabilityZone": "eu-west-2a",
+            "routeTableId": "rtb-0f31c6eee74458243"
+          }
+        ]
+      }
+    ]
+  }
 }

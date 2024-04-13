@@ -1,0 +1,10 @@
+{
+  "ServerlessLaravel": {
+    "BucketName": "serverlesslaravel-storagebucket19db2ff8-mljsfqjzcun0",
+    "LaravelArtisanFunctionName": "ServerlessLaravel-LaravelArtisan1CAD8727-Z9lrc6Q9dNhG",
+    "LaravelWorkerFunctionName": "ServerlessLaravel-LaravelWorker005DD181-S4SKp97V4KzD",
+    "DistributionURL": "d26umm985qbj8y.cloudfront.net",
+    "QueueName": "ServerlessLaravel-DefaultSqs4A8502A0-jeUwCyUuzFSr",
+    "LaravelWebFunctionName": "ServerlessLaravel-LaravelWeb2B607CD8-cUV6lnbamqGN"
+  }
+}
