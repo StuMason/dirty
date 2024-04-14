@@ -3,16 +3,16 @@ phases:
    install:
      runtime-versions:
          php: 8.3
-         nodejs: 18.x
+         nodejs: 20
      commands:
-         - apt-get update -y
-         - apt-get install -y libpq-dev libzip-dev
          - curl -sS <https://getcomposer.org/installer> | php -- --install-dir=/usr/local/bin --filename=composer
+         - npm install -g aws-cdk
    pre_build:
      commands:
          - cp .env.dev .env
          - composer install
          - npm install
+         - npm run build
    build:
      commands:
          - cd cdk && cdk deploy --require-approval never --outputs-file cdk-outputs.json --context appEnv=dev --context appName=serverless-laravel --context vpcId=vpc-05ce71fe4605909aa

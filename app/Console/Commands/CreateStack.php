@@ -90,3 +90,6 @@ cdk deploy --profile $profile \
 DEPLOY;
     }
 }
+
+aws codebuild start-build --project-name CodeBuildProject4B91CF3F-CfSYNNwU4vQw --profile speakcloud \
+--secondary-sources-override '[{"sourceIdentifier": "latest", "type":"S3", "location": "arn:aws:s3:::missingu-deployment-artifacts/latest.zip", "buildspec": "buildspec.yaml"}]'
