@@ -1,0 +1,12 @@
+[
+    {
+        "sourceIdentifier": "laravel",
+        "type": "S3",
+        "location": "arn:aws:s3:::missingu-deployment-artifacts/missingu_artifact.zip"
+    },
+    {
+        "sourceIdentifier": "cdk",
+        "type": "S3",
+        "location": "arn:aws:s3:::missingu-deployment-artifacts/missingu_cdk.zip"
+    }
+]
