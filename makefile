@@ -10,3 +10,6 @@ laravelzip:
 	aws s3 cp missingu_artifact.zip s3://missingu-deployment-artifacts/missingu_artifact.zip --profile speakcloud
 
 run: laravelzip codebuild
+
+tail:
+	aws logs tail /aws/codebuild/CodeBuildProject4B91CF3F-CfSYNNwU4vQw --profile speakcloud --follow
