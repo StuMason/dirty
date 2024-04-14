@@ -49,11 +49,13 @@ class MissinguDeploy extends Command
     {
         $this->info('Creating the missing:u artifact...');
         // Zip up the codebase
-        $dirty = Process::run('git status --porcelain');
-        if ($dirty) {
-            $this->error('You have uncommitted changes. Please commit or stash them before deploying.');
-            return;
-        }
+        $dirty = null;
+
+        $run = Process::run('git status --porcelain');
+        dd($run->output());
+
+        dd($dirty);
+    
         $command = "git archive -o missingu_artifact.zip -9 HEAD";
         $this->process = Process::timeout(240)->run($command);
     }
