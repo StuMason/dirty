@@ -30,6 +30,8 @@ class DestroyStack extends Command
     {
         $this->info('Destroying stack...');
         $profile = 'speakcloud';
+        $appName = $this->argument('appName');
+        $appEnv = $this->argument('appEnv');
         $stackCommand = "cdk destroy --profile $profile --force --context appName=$appName --context appEnv=$appEnv";
         Process::forever()
             ->idleTimeout(120)

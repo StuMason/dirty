@@ -17,7 +17,7 @@ import {
     aws_efs,
 } from "aws-cdk-lib";
 
-export class AppStack extends Stack {
+export class LayeredFunctionStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
 
@@ -69,7 +69,10 @@ export class AppStack extends Stack {
             }
         );
 
-        const laravelArtisan = new aws_lambda.DockerImageFunction(
+        const phpLayer = `arn:aws:lambda:${Stack.of(this).region}:${Stack.of(this).account}:layer:php-83:21`;
+        const phpFpmLayer = `arn:aws:lambda:${Stack.of(this).region}:${Stack.of(this).account}:layer:php-83-fpm:21`;
+
+        const laravelArtisan = new aws_lambda.Function(
             this,
             "LaravelArtisan",
             {
@@ -78,9 +81,14 @@ export class AppStack extends Stack {
                     subnetType: aws_ec2.SubnetType.PRIVATE_ISOLATED,
                 },
                 securityGroups: [lambdaSecGroup],
-                code: aws_lambda.DockerImageCode.fromImageAsset("../", {
-                    file: "Dockerfile-artisan",
-                }),
+                code: aws_lambda.Code.fromAsset("../"),
+                handler: "artisan",
+                runtime: aws_lambda.Runtime.PROVIDED_AL2,
+                layers: [aws_lambda.LayerVersion.fromLayerVersionArn(
+                    this,
+                    "LaravelLayer",
+                    phpLayer
+                )],
                 memorySize: 1024,
                 timeout: Duration.seconds(900),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
@@ -90,7 +98,7 @@ export class AppStack extends Stack {
             }
         );
 
-        const laravelWorker = new aws_lambda.DockerImageFunction(
+        const laravelWorker = new aws_lambda.Function(
             this,
             "LaravelWorker",
             {
@@ -99,9 +107,14 @@ export class AppStack extends Stack {
                     subnetType: aws_ec2.SubnetType.PRIVATE_ISOLATED,
                 },
                 securityGroups: [lambdaSecGroup],
-                code: aws_lambda.DockerImageCode.fromImageAsset("../", {
-                    file: "Dockerfile-worker",
-                }),
+                code: aws_lambda.Code.fromAsset("../"),
+                handler: "worker",
+                runtime: aws_lambda.Runtime.PROVIDED_AL2,
+                layers: [aws_lambda.LayerVersion.fromLayerVersionArn(
+                    this,
+                    "LaravelLayer",
+                    phpLayer
+                )],
                 memorySize: 1024,
                 timeout: Duration.seconds(900),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(
@@ -118,7 +131,7 @@ export class AppStack extends Stack {
         const eventSource = new aws_lambda_event_sources.SqsEventSource(queue);
         laravelWorker.addEventSource(eventSource);
 
-        const laravelWeb = new aws_lambda.DockerImageFunction(
+        const laravelWeb = new aws_lambda.Function(
             this,
             "LaravelWeb",
             {
@@ -127,7 +140,14 @@ export class AppStack extends Stack {
                     subnetType: aws_ec2.SubnetType.PRIVATE_ISOLATED,
                 },
                 securityGroups: [lambdaSecGroup],
-                code: aws_lambda.DockerImageCode.fromImageAsset("../"),
+                code: aws_lambda.Code.fromAsset("../"),
+                handler: "web",
+                runtime: aws_lambda.Runtime.PROVIDED_AL2,
+                layers: [aws_lambda.LayerVersion.fromLayerVersionArn(
+                    this,
+                    "LaravelLayer",
+                    phpFpmLayer
+                )],
                 memorySize: 1024,
                 timeout: Duration.seconds(180),
                 filesystem: aws_lambda.FileSystem.fromEfsAccessPoint(

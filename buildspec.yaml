@@ -2,7 +2,7 @@ version: 0.2
 phases:
    install:
      runtime-versions:
-         php: 8.2
+         php: 8.3
          nodejs: 18.x
      commands:
          - apt-get update -y
@@ -10,15 +10,15 @@ phases:
          - curl -sS <https://getcomposer.org/installer> | php -- --install-dir=/usr/local/bin --filename=composer
    pre_build:
      commands:
-         - cp .env.staging .env
+         - cp .env.dev .env
          - composer install
          - npm install
    build:
      commands:
-         - cdk deploy --require-approval never --outputs-file cdk-outputs.json --context appEnv=dev --context appName=serverless-laravel --context vpcId=vpc-05ce71fe4605909aa
+         - cd cdk && cdk deploy --require-approval never --outputs-file cdk-outputs.json --context appEnv=dev --context appName=serverless-laravel --context vpcId=vpc-05ce71fe4605909aa
 artifacts:
    files:
-         - cdk-outputs.json
+      - cdk-outputs.json
    name: cdk-outputs
 proxy:
    upload-artifacts: yes
