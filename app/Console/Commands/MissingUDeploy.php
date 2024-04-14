@@ -48,14 +48,11 @@ class MissinguDeploy extends Command
     private function zipCodebase()
     {
         $this->info('Creating the missing:u artifact...');
-        // Zip up the codebase
-        $dirty = null;
-
         $run = Process::run('git status --porcelain');
-        dd($run->output());
-
-        dd($dirty);
-    
+        if ($run->output() !== '') {
+            $this->error('You have uncommitted changes. Please commit or stash them before deploying.');
+            return;
+        }
         $command = "git archive -o missingu_artifact.zip -9 HEAD";
         $this->process = Process::timeout(240)->run($command);
     }
