@@ -69,6 +69,12 @@ export class AppStack extends Stack {
             }
         );
 
+        const functions = [
+            {"LaravelWeb":{},
+            {"LaravelArtisan":{},
+            {"LaravelWorker":{}}
+        ];
+
         const laravelArtisan = new aws_lambda.DockerImageFunction(
             this,
             "LaravelArtisan",
