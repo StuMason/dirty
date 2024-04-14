@@ -1,0 +1,6 @@
+FROM bref/php-82-console
+ADD  . /var/task
+
+ENTRYPOINT ["/var/runtime/bootstrap"]
+
+CMD ["artisan"]
