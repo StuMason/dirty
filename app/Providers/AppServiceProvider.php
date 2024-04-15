@@ -21,10 +21,6 @@ class AppServiceProvider extends ServiceProvider
     {
         if (env('MISSINGU_DEPLOYMENT')) {
             \URL::forceRootUrl(\Config::get('app.url'));
-            \URL::forceScheme('https');
-            
         }
-
-
     }
 }

@@ -27,12 +27,7 @@ class TestQueue extends Command
     public function handle()
     {
         try {
-            // try and hit the queue using AWS SDK and see if tha'ts causing issues:
             $this->info('Dispatching job...');  
-            
-
-
-
             CreateStackTest::dispatch()->onQueue('default');
             $this->info('Job dispatched successfully.');
             return 0;
