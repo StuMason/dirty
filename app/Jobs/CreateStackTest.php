@@ -28,7 +28,16 @@ class CreateStackTest implements ShouldQueue
     public function handle(): void
     {
         try {
-            Stack::factory()->create();
+            Log::info('Getting all stacks...');
+            Log::info(Stack::all(['id', 'name', 'env', 'env_key', 'bucket', 'region', 'account'])->toArray());
+            Stack::create([
+                'name' => 'Test Stack',
+                'env' => 'test',
+                'env_key' => 'test',
+                'bucket' => 'test',
+                'region' => 'us-east-1',
+                'account' => 'test'
+            ]);
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
             throw $th;
