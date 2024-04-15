@@ -26,6 +26,10 @@ class TestQueue extends Command
      */
     public function handle()
     {
-        CreateStackTest::dispatch();
+        try {
+            CreateStackTest::dispatch()->onQueue('default');
+        } catch (\Throwable $th) {
+            $this->error($th->getMessage());
+        }
     }
 }
