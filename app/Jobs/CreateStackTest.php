@@ -8,6 +8,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Stack;
+use Illuminate\Support\Facades\Log;
 
 class CreateStackTest implements ShouldQueue
 {
@@ -26,6 +27,11 @@ class CreateStackTest implements ShouldQueue
      */
     public function handle(): void
     {
-        Stack::factory()->create();
+        try {
+            Stack::factory()->create();
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            throw $th;
+        }
     }
 }

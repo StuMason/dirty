@@ -3,23 +3,23 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Jobs\CreateStackTest;
+use Illuminate\Support\Facades\Http;
 
-class TestQueue extends Command
+class TestInternetAccess extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'stacks:queue';
+    protected $signature = 'stacks:internet';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Test queueing a job';
+    protected $description = 'Test hitting the fucking internet';
 
     /**
      * Execute the console command.
@@ -27,10 +27,9 @@ class TestQueue extends Command
     public function handle()
     {
         try {
-            $this->info('Dispatching job...');
-            CreateStackTest::dispatch();
-            $this->info('Job dispatched successfully.');
-            return 0;
+            // Get google.com and dump out the source
+            $google = Http::get("https://google.com");
+            $this->info($google->getStatusCode());
         } catch (\Throwable $th) {
             $this->error($th->getMessage());
         }
