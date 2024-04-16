@@ -1,8 +1,0 @@
-{
-ServerlessLaravel.BucketName = serverless-laravel-dev-storagebucket19db2ff8-s3rvazgssdag
-ServerlessLaravel.DistributionURL = d29vrd1yzvnhd9.cloudfront.net
-ServerlessLaravel.LaravelArtisanFunctionName = serverless-laravel-dev-LaravelArtisan1CAD8727-OJ07HKhzIRSm
-ServerlessLaravel.LaravelWebFunctionName = serverless-laravel-dev-LaravelWeb2B607CD8-ikhPvqROW6gB
-ServerlessLaravel.LaravelWorkerFunctionName = serverless-laravel-dev-LaravelWorker005DD181-rqK08asRr3PW
-ServerlessLaravel.QueueName = serverless-laravel-dev-DefaultSqs4A8502A0-GCWHBjrOc6KT
-}

@@ -29,7 +29,7 @@ class DeployStack extends Command
         parent::__construct();
         $this->appName = env('APP_NAME');
         $this->appEnv = env('APP_ENV');
-        $this->mountPoint = "/stacks/lambda/$this->appName/$this->appEnv";
+        $this->mountPoint = "/mnt/store/";
     }
 
     /**
@@ -53,7 +53,7 @@ class DeployStack extends Command
         }
 
         $this->info('Running post deploy commands...');
-        $this->decryptEnv();
+        // $this->decryptEnv();
         $this->databaseSetup();
 
     }
@@ -69,21 +69,7 @@ class DeployStack extends Command
             }
             $this->info('Migrating database...');
             $this->call('migrate', ['--force' => true]);
-            $this->info('Database created successfully.');
         } catch (\Exception $e) {
-            $this->error($e->getMessage());
-            return;
-        }
-    }
-
-    private function decryptEnv()
-    {
-        try {
-            // $this->call('env:decrypt', ['--key' => $this->key, '--env' => 'serverless', '--force' => true]);
-            rename("/var/task/.env.$this->appEnv", "$this->mountPoint/.env");
-            $this->info('Env file decrypted successfully.');
-        } catch (\Exception $e) {
-            $this->error('Failed to decrypt the env file...');
             $this->error($e->getMessage());
             return;
         }

@@ -8,6 +8,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Stack;
+use Illuminate\Support\Facades\Log;
 
 class CreateStackTest implements ShouldQueue
 {
@@ -26,6 +27,20 @@ class CreateStackTest implements ShouldQueue
      */
     public function handle(): void
     {
-        Stack::factory()->create();
+        try {
+            Log::info('Getting all stacks...');
+            Log::info(Stack::all(['id', 'name', 'env', 'env_key', 'bucket', 'region', 'account'])->toArray());
+            Stack::create([
+                'name' => 'Test Stack',
+                'env' => 'test',
+                'env_key' => 'test',
+                'bucket' => 'test',
+                'region' => 'us-east-1',
+                'account' => 'test'
+            ]);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            throw $th;
+        }
     }
 }
